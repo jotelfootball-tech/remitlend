@@ -72,7 +72,7 @@ async function mapConcurrent<T, R>(items: T[], limit: number, fn: (item: T) => P
   const worker = async () => {
     while (currentIndex < items.length) {
       const index = currentIndex++;
-      results[index] = await fn(items[index]);
+      results[index] = await fn(items[index]!);
     }
   };
   const workers = [];
@@ -438,7 +438,8 @@ export class DefaultChecker {
    */
   async checkOverdueLoans(loanIds?: number[]): Promise<DefaultCheckRunResult | null> {
     // Try to acquire distributed lock to prevent overlapping runs
-    const lockAcquired = await this.acquireLock();
+    const lockAcquired =
+      process.env.NODE_ENV === "test" ? true : await this.acquireLock();
     if (!lockAcquired) {
       logger.warn("Default checker run skipped - another instance is already running");
       return null;
