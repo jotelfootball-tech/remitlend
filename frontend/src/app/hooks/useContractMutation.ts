@@ -70,6 +70,19 @@ export function useContractMutation<TData extends { txHash?: string }, TError, T
   const [currentTxHash, setCurrentTxHash] = useState<string | undefined>();
   const pollingControllerRef = useRef<AbortController | null>(null);
 
+  const {
+    pendingMessage = "Processing transaction...",
+    successMessage = "Transaction successful!",
+    errorMessage = "Transaction failed",
+    network = "testnet",
+    disableToast = false,
+    gamificationXP,
+    gamificationReason,
+    gamificationAchievement,
+    onStateChange,
+    enableEnhancedPolling = true,
+  } = options;
+
   const updateState = useCallback(
     (state: TransactionLifecycleState, txHash?: string) => {
       setLifecycleState(state);
@@ -119,19 +132,6 @@ export function useContractMutation<TData extends { txHash?: string }, TError, T
     },
     [enableEnhancedPolling, updateState],
   );
-
-  const {
-    pendingMessage = "Processing transaction...",
-    successMessage = "Transaction successful!",
-    errorMessage = "Transaction failed",
-    network = "testnet",
-    disableToast = false,
-    gamificationXP,
-    gamificationReason,
-    gamificationAchievement,
-    onStateChange,
-    enableEnhancedPolling = true,
-  } = options;
 
   const triggerGamification = useCallback(() => {
     if (gamificationXP) {
