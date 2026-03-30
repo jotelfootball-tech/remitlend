@@ -70,49 +70,55 @@ export function useContractMutation<TData extends { txHash?: string }, TError, T
   const [currentTxHash, setCurrentTxHash] = useState<string | undefined>();
   const pollingControllerRef = useRef<AbortController | null>(null);
 
-  const updateState = useCallback((state: TransactionLifecycleState, txHash?: string) => {
-    setLifecycleState(state);
-    setCurrentTxHash(txHash);
-    onStateChange?.(state, txHash);
-  }, [onStateChange]);
+  const updateState = useCallback(
+    (state: TransactionLifecycleState, txHash?: string) => {
+      setLifecycleState(state);
+      setCurrentTxHash(txHash);
+      onStateChange?.(state, txHash);
+    },
+    [onStateChange],
+  );
 
-  const startEnhancedPolling = useCallback(async (txHash: string) => {
-    if (!enableEnhancedPolling) return;
+  const startEnhancedPolling = useCallback(
+    async (txHash: string) => {
+      if (!enableEnhancedPolling) return;
 
-    updateState("submitted", txHash);
+      updateState("submitted", txHash);
 
-    const controller = new AbortController();
-    pollingControllerRef.current = controller;
+      const controller = new AbortController();
+      pollingControllerRef.current = controller;
 
-    try {
-      // Wait a bit before starting to poll to allow transaction to propagate
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      try {
+        // Wait a bit before starting to poll to allow transaction to propagate
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      updateState("confirming", txHash);
-
-      const pollResult = await pollTransactionStatus(txHash, {
-        signal: controller.signal,
-        intervalMs: 2000,
-        timeoutMs: 60000, // 60 seconds timeout
-      });
-
-      pollingControllerRef.current = null;
-
-      if (pollResult.status === "success") {
-        updateState("confirmed", txHash);
-      } else if (pollResult.status === "failed") {
-        updateState("failed", txHash);
-      } else {
-        // Timeout or cancelled - transaction might still be processing
         updateState("confirming", txHash);
+
+        const pollResult = await pollTransactionStatus(txHash, {
+          signal: controller.signal,
+          intervalMs: 2000,
+          timeoutMs: 60000, // 60 seconds timeout
+        });
+
+        pollingControllerRef.current = null;
+
+        if (pollResult.status === "success") {
+          updateState("confirmed", txHash);
+        } else if (pollResult.status === "failed") {
+          updateState("failed", txHash);
+        } else {
+          // Timeout or cancelled - transaction might still be processing
+          updateState("confirming", txHash);
+        }
+      } catch (error) {
+        pollingControllerRef.current = null;
+        if (!controller.signal.aborted) {
+          updateState("failed", txHash);
+        }
       }
-    } catch (error) {
-      pollingControllerRef.current = null;
-      if (!controller.signal.aborted) {
-        updateState("failed", txHash);
-      }
-    }
-  }, [enableEnhancedPolling, updateState]);
+    },
+    [enableEnhancedPolling, updateState],
+  );
 
   const {
     pendingMessage = "Processing transaction...",

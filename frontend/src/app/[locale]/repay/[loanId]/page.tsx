@@ -178,7 +178,7 @@ export default function RepayLoanPage() {
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    
+
     const previewData = formatLoanRepayment({
       loanId: parseInt(loanId),
       amount: amountNumber,
@@ -244,7 +244,9 @@ export default function RepayLoanPage() {
         guidance={trackerGuidance}
         txHash={trackerTxHash}
         onCancel={
-          trackerState === "pending" || trackerState === "submitted" || trackerState === "confirming"
+          trackerState === "pending" ||
+          trackerState === "submitted" ||
+          trackerState === "confirming"
             ? cancelFlow
             : undefined
         }
